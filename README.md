@@ -1,26 +1,36 @@
 # Bitespeed Backend Task - Identity Reconciliation
 
-## Endpoint
-POST /identify
+## 🔗 Hosted Endpoint
 
-## Request Body
-{
-  "email": "string",
-  "phoneNumber": "string"
-}
+POST https://bitespeed-api-vcwp.onrender.com/identify
 
-At least one field is required.
+---
 
-## Setup
+## 📌 Overview
 
-1. npm install
-2. Add DATABASE_URL in .env
-3. npx prisma migrate dev --name init
-4. npm run dev
+This service implements identity reconciliation for customers placing orders using different emails and phone numbers.
 
-## Tech Stack
+It consolidates multiple contact records into a single primary identity while maintaining correct linkage using primary and secondary contacts.
+
+The oldest contact is always treated as the primary contact.
+
+---
+
+## 🛠 Tech Stack
+
 - Node.js
 - TypeScript
 - Express
-- PostgreSQL
-- Prisma
+- PostgreSQL (Render)
+- Prisma ORM
+
+---
+
+## ⚙️ Setup & Local Development
+
+Follow these steps to run the project locally:
+
+1. Install dependencies
+
+```bash
+npm install
