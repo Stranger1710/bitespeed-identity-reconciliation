@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Contact } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -9,8 +9,7 @@ export const identifyContact = async (
 
   return prisma.$transaction(async (tx) => {
 
-    // Step 1: Find matching contacts
-    const matchedContacts = await tx.contact.findMany({
+    const matchedContacts: Contact[] = await tx.contact.findMany({
       where: {
         OR: [
           { email: email ?? undefined },
@@ -19,7 +18,6 @@ export const identifyContact = async (
       }
     });
 
-    // Step 2: No matches → create new primary
     if (matchedContacts.length === 0) {
       const newContact = await tx.contact.create({
         data: {
@@ -32,10 +30,9 @@ export const identifyContact = async (
       return buildResponse(tx, newContact.id);
     }
 
-    // Step 3: Get all connected contacts
-    const matchedIds = matchedContacts.map(c => c.id);
+    const matchedIds = matchedContacts.map((c: Contact) => c.id);
 
-    const allContacts = await tx.contact.findMany({
+    const allContacts: Contact[] = await tx.contact.findMany({
       where: {
         OR: [
           { id: { in: matchedIds } },
@@ -44,16 +41,15 @@ export const identifyContact = async (
       }
     });
 
-    // Step 4: Determine oldest primary
-    const primaryContacts = allContacts.filter(
-      c => c.linkPrecedence === "primary"
+    const primaryContacts: Contact[] = allContacts.filter(
+      (c: Contact) => c.linkPrecedence === "primary"
     );
 
-    const oldestPrimary = primaryContacts.sort(
-      (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+    const oldestPrimary: Contact = primaryContacts.sort(
+      (a: Contact, b: Contact) =>
+        a.createdAt.getTime() - b.createdAt.getTime()
     )[0];
 
-    // Step 5: Merge multiple primaries
     for (const contact of primaryContacts) {
       if (contact.id !== oldestPrimary.id) {
         await tx.contact.update({
@@ -66,13 +62,12 @@ export const identifyContact = async (
       }
     }
 
-    // Step 6: Detect new information
     const existingEmails = new Set(
-      allContacts.map(c => c.email).filter(Boolean)
+      allContacts.map((c: Contact) => c.email).filter(Boolean)
     );
 
     const existingPhones = new Set(
-      allContacts.map(c => c.phoneNumber).filter(Boolean)
+      allContacts.map((c: Contact) => c.phoneNumber).filter(Boolean)
     );
 
     const isNewEmail = email && !existingEmails.has(email);
@@ -95,7 +90,7 @@ export const identifyContact = async (
 
 const buildResponse = async (tx: any, primaryId: number) => {
 
-  const contacts = await tx.contact.findMany({
+  const contacts: Contact[] = await tx.contact.findMany({
     where: {
       OR: [
         { id: primaryId },
@@ -104,21 +99,27 @@ const buildResponse = async (tx: any, primaryId: number) => {
     }
   });
 
-  const primary = contacts.find(c => c.id === primaryId)!;
+  const primary = contacts.find(
+    (c: Contact) => c.id === primaryId
+  ) as Contact;
 
   const emails = [
     primary.email,
-    ...contacts.filter(c => c.id !== primaryId).map(c => c.email)
-  ].filter(Boolean);
+    ...contacts
+      .filter((c: Contact) => c.id !== primaryId)
+      .map((c: Contact) => c.email)
+  ].filter(Boolean) as string[];
 
   const phoneNumbers = [
     primary.phoneNumber,
-    ...contacts.filter(c => c.id !== primaryId).map(c => c.phoneNumber)
-  ].filter(Boolean);
+    ...contacts
+      .filter((c: Contact) => c.id !== primaryId)
+      .map((c: Contact) => c.phoneNumber)
+  ].filter(Boolean) as string[];
 
   const secondaryContactIds = contacts
-    .filter(c => c.linkPrecedence === "secondary")
-    .map(c => c.id);
+    .filter((c: Contact) => c.linkPrecedence === "secondary")
+    .map((c: Contact) => c.id);
 
   return {
     contact: {
