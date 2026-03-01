@@ -19,6 +19,10 @@ model Contact {
 
   linkedContact  Contact?  @relation("ContactLink", fields: [linkedId], references: [id])
   secondaryLinks Contact[] @relation("ContactLink")
+
+  @@index([email])
+  @@index([phoneNumber])
+  @@index([linkedId])
 }
 
 enum LinkPrecedence {
